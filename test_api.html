@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload API</title>
+</head>
+<body>
+    <h1>Test Upload Initialize</h1>
+    <button onclick="testInitialize()">Test Initialize API</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testInitialize() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/uploads/initialize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: 'test.jpg',
+                        mime_type: 'image/jpeg',
+                        total_size: 1024000,
+                        total_chunks: 10,
+                        checksum: 'abc123def456ghi789jkl012mno345pq'
+                    })
+                });
+                
+                const text = await response.text();
+                document.getElementById('result').textContent = text;
+                
+                console.log('Status:', response.status);
+                console.log('Response:', text);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

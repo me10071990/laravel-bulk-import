@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Upload Test</title>
+</head>
+<body>
+    <h2>Test Image Upload</h2>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="uploadImage()">Upload</button>
+    <div id="result"></div>
+
+    <script>
+        async function uploadImage() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                alert('Select a file first');
+                return;
+            }
+
+            // Calculate checksum
+            const checksum = await calculateChecksum(file);
+            
+            // Initialize
+            const initResp = await fetch('http://127.0.0.1:8000/api/uploads/initialize', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    filename: file.name,
+                    mime_type: file.type,
+                    total_size: file.size,
+                    total_chunks: 1,
+                    checksum: checksum
+                })
+            });
+            
+            const initData = await initResp.json();
+            document.getElementById('result').innerHTML = 'Upload ID: ' + initData.upload_id;
+            console.log(initData);
+        }
+
+        async function calculateChecksum(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const buffer = e.target.result;
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                    resolve(hashHex);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+    </script>
+</body>
+</html>
