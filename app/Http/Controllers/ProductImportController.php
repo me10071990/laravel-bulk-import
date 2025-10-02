@@ -22,17 +22,13 @@ class ProductImportController extends Controller
         $this->imageProcessingService = $imageProcessingService;
     }
 
-    /**
-     * Show import form
-     */
+   
     public function index()
     {
         return view('import.index');
     }
 
-    /**
-     * Handle CSV import
-     */
+   
     public function import(Request $request)
     {
         $request->validate([
@@ -58,9 +54,7 @@ class ProductImportController extends Controller
         ]);
     }
 
-    /**
-     * Link image to product
-     */
+   
     public function linkImage(Request $request)
     {
         $request->validate([
@@ -78,10 +72,10 @@ class ProductImportController extends Controller
             ], 400);
         }
 
-        // Process upload and generate variants
+     
         $images = $this->imageProcessingService->processUpload($upload, $product);
         
-        // Set original as primary
+   
         $originalImage = collect($images)->firstWhere('variant', 'original');
         $this->imageProcessingService->attachAsPrimary($originalImage, $product);
 
@@ -92,9 +86,7 @@ class ProductImportController extends Controller
         ]);
     }
 
-    /**
-     * Get products list
-     */
+   
     public function products()
     {
         $products = Product::with('primaryImage')->paginate(20);
