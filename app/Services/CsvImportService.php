@@ -19,12 +19,10 @@ class CsvImportService
 
     private array $processedSkus = [];
 
-    /**
-     * Import products from CSV file
-     */
+   
     public function importProducts(string $filePath): array
     {
-        // Reset for each import
+     
         $this->summary = [
             'total' => 0,
             'imported' => 0,
@@ -42,7 +40,7 @@ class CsvImportService
         foreach ($records as $offset => $record) {
             $this->summary['total']++;
             
-            // Validate row
+            
             $validation = $this->validateRow($record);
             
            if (!$validation['valid']) {
@@ -51,7 +49,7 @@ class CsvImportService
                 continue;
             }
             
-            // Check for duplicates within CSV
+      
             $sku = trim($record['sku']);
             if (isset($this->processedSkus[$sku])) {
                 $this->summary['duplicates']++;
@@ -60,21 +58,18 @@ class CsvImportService
             
             $this->processedSkus[$sku] = true;
             
-            // Upsert product
+         
             $this->upsertProduct($record);
         }
         
         return $this->summary;
     }
 
-    /**
-     * Validate CSV row
-     */
     private function validateRow(array $row): array
     {
         $requiredColumns = ['sku', 'name', 'price'];
         
-        // Check for missing or empty required columns
+     
         foreach ($requiredColumns as $column) {
             if (!isset($row[$column]) || trim($row[$column]) === '') {
                 return [
@@ -84,7 +79,7 @@ class CsvImportService
             }
         }
         
-        // Validate data types and constraints
+
         $validator = Validator::make($row, [
             'sku' => 'required|string|max:255',
             'name' => 'required|string|max:255',
@@ -103,9 +98,7 @@ class CsvImportService
         return ['valid' => true];
     }
 
-    /**
-     * Upsert product - create or update
-     */
+
     private function upsertProduct(array $data): void
     {
         $sku = trim($data['sku']);
@@ -120,19 +113,17 @@ class CsvImportService
         ];
         
         if ($product) {
-            // Update existing product
+         
             $product->update($productData);
             $this->summary['updated']++;
         } else {
-            // Create new product
+          
             Product::create($productData);
             $this->summary['imported']++;
         }
     }
 
-    /**
-     * Get import summary
-     */
+   
     public function getSummary(): array
     {
         return $this->summary;
