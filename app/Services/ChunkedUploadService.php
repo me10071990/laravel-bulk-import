@@ -123,7 +123,7 @@ class ChunkedUploadService
 {
     $assembledPath = "{$this->tempDirectory}/{$upload->upload_id}/assembled";
     
-    // Create directory if it doesn't exist
+ 
     $directory = dirname(Storage::path($assembledPath));
     if (!is_dir($directory)) {
         mkdir($directory, 0755, true);
