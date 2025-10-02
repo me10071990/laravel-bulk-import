@@ -12,9 +12,7 @@ class ChunkedUploadService
 {
     private string $tempDirectory = 'temp/uploads';
 
-    /**
-     * Initialize new chunked upload
-     */
+   
     public function initializeUpload(
         string $filename, 
         string $mimeType, 
@@ -35,35 +33,31 @@ class ChunkedUploadService
         ]);
     }
 
-    /**
-     * Upload a single chunk - concurrency safe
-     */
+  
     public function uploadChunk(Upload $upload, UploadedFile $chunk, int $chunkIndex): bool
     {
         return DB::transaction(function () use ($upload, $chunk, $chunkIndex) {
-            // Refresh to get latest state
+          
             $upload->refresh();
             
             $chunkPath = $this->getChunkPath($upload->upload_id, $chunkIndex);
             
-            // Check if chunk already uploaded (resume scenario)
+          
             if (Storage::exists($chunkPath)) {
                 return true; // Already uploaded, skip
             }
             
-            // Store chunk
+         
             Storage::put($chunkPath, $chunk->get());
             
-            // Update upload record
+          
             $upload->recordChunkUpload($chunk->getSize());
             
             return true;
         });
     }
 
-    /**
-     * Complete upload - assemble chunks and verify
-     */
+   
   public function completeUpload(Upload $upload): bool
 {
     \Log::info('Complete upload called', [
@@ -72,7 +66,7 @@ class ChunkedUploadService
         'total_chunks' => $upload->total_chunks
     ]);
     
-    // Verify all chunks uploaded
+  
     if (!$upload->allChunksUploaded()) {
         \Log::error('Not all chunks uploaded', [
             'uploaded' => $upload->uploaded_chunks,
@@ -81,10 +75,10 @@ class ChunkedUploadService
         return false;
     }
     
-    // Update status to processing
+  
     $upload->update(['status' => 'processing']);
     
-    // Assemble file
+   
     $assembledPath = $this->assembleChunks($upload);
     
     if (!$assembledPath) {
@@ -95,7 +89,7 @@ class ChunkedUploadService
     
     \Log::info('Chunks assembled', ['path' => $assembledPath]);
     
-    // Verify checksum
+    
     if (!$this->verifyChecksum($assembledPath, $upload->checksum)) {
         \Log::error('Checksum mismatch', [
             'expected' => $upload->checksum,
@@ -109,14 +103,14 @@ class ChunkedUploadService
     
     \Log::info('Checksum verified');
     
-    // Move to final location
+   
     $finalPath = "uploads/{$upload->upload_id}/{$upload->filename}";
     Storage::move($assembledPath, $finalPath);
     
-    // Update upload record
+   
     $upload->markAsCompleted($finalPath);
     
-    // Cleanup chunks
+
     $this->cleanupChunks($upload->upload_id);
     
     \Log::info('Upload completed successfully');
@@ -124,9 +118,7 @@ class ChunkedUploadService
     return true;
 }
 
-    /**
-     * Assemble all chunks into single file
-     */
+   
     private function assembleChunks(Upload $upload): ?string
 {
     $assembledPath = "{$this->tempDirectory}/{$upload->upload_id}/assembled";
@@ -168,9 +160,7 @@ class ChunkedUploadService
     return $assembledPath;
 }
 
-    /**
-     * Verify file checksum
-     */
+   
     private function verifyChecksum(string $path, string $expectedChecksum): bool
 {
     $fileContent = Storage::get($path);
@@ -184,25 +174,19 @@ class ChunkedUploadService
     
     return hash_equals($expectedChecksum, $actualChecksum);
 }
-    /**
-     * Get chunk storage path
-     */
+   
     private function getChunkPath(string $uploadId, int $chunkIndex): string
     {
         return "{$this->tempDirectory}/{$uploadId}/chunk_{$chunkIndex}";
     }
 
-    /**
-     * Cleanup temporary chunk files
-     */
+  
     private function cleanupChunks(string $uploadId): void
     {
         Storage::deleteDirectory("{$this->tempDirectory}/{$uploadId}");
     }
 
-    /**
-     * Get upload status
-     */
+
     public function getUploadStatus(string $uploadId): ?Upload
     {
         return Upload::where('upload_id', $uploadId)->first();
